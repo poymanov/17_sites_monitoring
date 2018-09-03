@@ -1,7 +1,56 @@
 # Sites Monitoring Utility
 
-[TODO. There will be project description]
+Скрипт анализирует url-адреса из указанного текстового файла и выводит информацию о доступности и сроке истечения доменных имен.
 
-# Project Goals
+Доступность отображается в поле HTTP-status:
+```
+HTTP-status: 200 (ok)
+```
+**200 (ok)** - нормальное состояние адреса. Ресурс доступен по этому адресу и успешно загружается. Остальные статусы означают ошибки доступности или настройки доменного имени.
 
-The code is written for educational purposes. Training course for web-developers - [DEVMAN.org](https://devman.org)
+В поле срока истечения выводится дата истечения доступности доменного имени и описание текущего состояния:
+```
+Domain expiration: Will expire not soon (01-08-2019)
+```
+- **Will expire not soon** - истекает более чем через 30 дней
+- **Expires soon** - до конца действия доменного имени осталось менее 30 дней
+- **Expired** - доменное имя истекло
+
+# Предварительные настройки
+
+- Установить и запустить [virtualenv/venv](https://devman.org/encyclopedia/pip/pip_virtualenv/) для Python
+- Установить дополнительные пакеты:
+```
+pip install -r requirements.txt
+```
+- Подготовить текстовый файл со списком адресов в формате:
+```
+http://ya.ru
+http://yandex.ru/
+http://market.yandex.ru/
+```
+
+# Как запустить
+
+Скрипт требует для своей работы установленного интерпретатора **Python** версии **3.5**.
+
+**Запуск на Linux**
+
+```bash
+$ python check_sites_health.py urls.txt # или python3, в зависимости от настроек системы
+
+# результат выполнения скрипта
+Url: http://ya.ru
+HTTP-status: 200 (ok)
+Domain expiration: Will expire not soon (01-08-2019)
+
+# если url указан в неверном формате:
+Invalid URL: ya.ru
+
+```
+
+Запуск на **Windows** происходит аналогично.
+
+# Цели проекта
+
+Код создан в учебных целях. В рамках учебного курса по веб-разработке - [DEVMAN.org](https://devman.org)
