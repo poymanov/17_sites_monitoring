@@ -36,28 +36,36 @@ def validate_urls(urls_list):
 
 def get_http_status_description(url):
     response = requests.get(url)
-
-    if response.ok:
-        status_description = 'OK'
-    else:
-        status_description = 'Connection error'
-
-    return status_description
+    return response.ok
 
 
-def get_domain_expiration_description(url, expires_period=30):
+def get_expiration_date(url):
     domain_info = whois.whois(url)
+    return domain_info.expiration_date
 
-    expires_date = domain_info.expiration_date
-    date_delta = datetime.today() - expires_date
+
+def get_expiration_description(expiration_date, expires_period=30):
+    if type(expiration_date) is not datetime:
+        return 'N/A'
+
+    date_delta = datetime.today() - expiration_date
     date_delta_days = date_delta.days
 
     if date_delta_days < 0 and abs(date_delta_days) >= expires_period:
-        expiration_description = 'Not expired'
+        description = 'Not expired'
     else:
-        expiration_description = 'Expires'
+        description = 'Expires'
 
-    return expiration_description
+    return description
+
+
+def get_http_status_description(http_status):
+    if http_status:
+        description = 'OK'
+    else:
+        description = 'Connection error'
+
+    return description
 
 
 def get_urls_info(urls_list):
@@ -66,9 +74,12 @@ def get_urls_info(urls_list):
     for url in urls_list:
         url_data = {}
 
+        http_status = get_http_status_description(url)
+        expiration_date = get_expiration_date(url)
+
         url_data['url'] = url
-        url_data['http_status'] = get_http_status_description(url)
-        url_data['domain_expiration'] = get_domain_expiration_description(url)
+        url_data['http_status'] = get_http_status_description(http_status)
+        url_data['expiration'] = get_expiration_description(expiration_date)
 
         urls_info.append(url_data)
 
@@ -77,7 +88,7 @@ def get_urls_info(urls_list):
 
 def output_to_console(urls_info):
     template = ('Url: {url}\nHTTP-status: {http_status}\n'
-                'Domain expiration: {domain_expiration}\n')
+                'Domain expiration: {expiration}\n')
 
     for url in urls_info:
         print(template.format(**url))
