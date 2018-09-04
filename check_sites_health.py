@@ -3,6 +3,7 @@ import os
 import sys
 import re
 import requests
+import whois
 from datetime import datetime
 
 
@@ -19,13 +20,13 @@ def get_urls_list(filepath):
         return None
 
     with open(filepath) as file:
-        content = file.read().splitlines()
+        urls_list = file.read().splitlines()
 
-    return content
+    return urls_list
 
 
 def validate_urls(urls_list):
-    pattern = r'^(https?)://[^\s/$.?#].[^\s]*$'
+    pattern = r'^(https?)://.'
     for url in urls_list:
         if not re.match(pattern, url):
             return url
@@ -34,44 +35,29 @@ def validate_urls(urls_list):
 
 
 def get_http_status_description(url):
-    try:
-        response = requests.get(url)
-        status_code = response.status_code
-        status_code_descripton = requests.status_codes._codes[status_code][0]
-        return '{} ({})'.format(status_code, status_code_descripton)
-    except requests.exceptions.ConnectionError:
-        return None
+    response = requests.get(url)
+
+    if response.ok:
+        status_description = 'OK'
+    else:
+        status_description = 'Connection error'
+
+    return status_description
 
 
 def get_domain_expiration_description(url, expires_period=30):
-    api_url = 'http://api.whois.vu/'
-    params = {'q': url}
-    response = requests.get(api_url, params)
+    domain_info = whois.whois(url)
 
-    if response.status_code != requests.codes.ok:
-        return 'N/A'
-
-    response_data = response.json()
-
-    if 'expires' not in response_data.keys():
-        return 'N/A'
-
-    expires_timestamp = response_data['expires']
-    expires_date = datetime.fromtimestamp(expires_timestamp)
+    expires_date = domain_info.expiration_date
     date_delta = datetime.today() - expires_date
     date_delta_days = date_delta.days
 
-    expires_date_format = expires_date.strftime('%d-%m-%Y')
-
-    if date_delta_days < 0:
-        if abs(date_delta_days) >= expires_period:
-            expiration_description = 'Will expire not soon'
-        else:
-            expiration_description = 'Expires soon'
+    if date_delta_days < 0 and abs(date_delta_days) >= expires_period:
+        expiration_description = 'Not expired'
     else:
-        expiration_description = 'Expired'
+        expiration_description = 'Expires'
 
-    return '{} ({})'.format(expiration_description, expires_date_format)
+    return expiration_description
 
 
 def get_urls_info(urls_list):
@@ -80,17 +66,9 @@ def get_urls_info(urls_list):
     for url in urls_list:
         url_data = {}
 
-        http_status = get_http_status_description(url)
-
-        if http_status is None:
-            http_status = 'Connection error'
-            domain_expiration = 'N/A'
-        else:
-            domain_expiration = get_domain_expiration_description(url)
-
         url_data['url'] = url
-        url_data['http_status'] = http_status
-        url_data['domain_expiration'] = domain_expiration
+        url_data['http_status'] = get_http_status_description(url)
+        url_data['domain_expiration'] = get_domain_expiration_description(url)
 
         urls_info.append(url_data)
 
