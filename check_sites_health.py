@@ -35,37 +35,42 @@ def validate_urls(urls_list):
 
 
 def is_server_available(url):
-    response = requests.get(url)
-    return response.ok
+    try:
+        response = requests.get(url)
+        return response.ok
+    except requests.ConnectionError:
+        return False
 
 
 def get_expiration_info(url):
     domain_info = whois.whois(url)
-    return domain_info.expiration_date
 
+    expiration_date = domain_info.expiration_date
 
-def get_expiration_description(expiration_date, expires_period=30):
     if type(expiration_date) is list:
         expiration_date = expiration_date[0]
     elif type(expiration_date) is not datetime:
+        expiration_date = None
+
+    return expiration_date
+
+
+def get_expiration_description(expiration_date, expires_period=30):
+    if not expiration_date:
         return 'N/A'
 
-    today = datetime.today()
-    date_delta = today - expiration_date
+    date_delta = datetime.today() - expiration_date
     date_delta_days = date_delta.days
 
     if date_delta_days < 0 and abs(date_delta_days) >= expires_period:
-        today_format = today.strftime('%d-%m-%Y')
-        period = today + timedelta(days=expires_period)
-        period_format = period.strftime('%d-%m-%Y')
-        description = 'Not expired ({}-{})'.format(today_format, period_format)
+        description = 'Not expired in {} days'.format(expires_period)
     else:
         description = 'Expires'
 
     return description
 
 
-def get_server_response_description(availability):
+def get_server_status_description(availability):
     if availability:
         description = 'OK'
     else:
@@ -84,7 +89,7 @@ def get_urls_info(urls_list):
         expiration_info = get_expiration_info(url)
 
         url_data['url'] = url
-        url_data['http_status'] = get_server_response_description(availability)
+        url_data['server_status'] = get_server_status_description(availability)
         url_data['expiration'] = get_expiration_description(expiration_info)
 
         urls_info.append(url_data)
@@ -93,7 +98,7 @@ def get_urls_info(urls_list):
 
 
 def output_to_console(urls_info):
-    template = ('Url: {url}\nHTTP-status: {http_status}\n'
+    template = ('Url: {url}\nServer status: {server_status}\n'
                 'Domain expiration: {expiration}\n')
 
     for url in urls_info:
