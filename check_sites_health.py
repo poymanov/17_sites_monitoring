@@ -85,12 +85,9 @@ def get_urls_info(urls_list):
     for url in urls_list:
         url_data = {}
 
-        availability = is_server_available(url)
-        expiration_info = get_expiration_info(url)
-
-        url_data['url'] = url
-        url_data['server_status'] = get_server_status_description(availability)
-        url_data['expiration'] = get_expiration_description(expiration_info)
+        url_data['address'] = url
+        url_data['availability'] = is_server_available(url)
+        url_data['expiration_info'] = get_expiration_info(url)
 
         urls_info.append(url_data)
 
@@ -98,11 +95,13 @@ def get_urls_info(urls_list):
 
 
 def output_to_console(urls_info):
-    template = ('Url: {url}\nServer status: {server_status}\n'
-                'Domain expiration: {expiration}\n')
+    template = ('Url: {}\nServer status: {}\n Domain expiration: {}\n')
 
     for url in urls_info:
-        print(template.format(**url))
+        address = url['address']
+        server_status = get_server_status_description(url['availability'])
+        expiration = get_expiration_description(url['expiration_info'])
+        print(template.format(address, server_status, expiration))
 
 
 if __name__ == '__main__':
